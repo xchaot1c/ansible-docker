@@ -1,0 +1,72 @@
+---
+- name: Install all required dependencies
+  apt:
+    name:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - software-properties-common
+    state: latest
+  tags:
+    - docker
+
+- name: Install docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    id: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+    state: present
+
+ 
+- name: Set up the stable repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+    state: present
+    update_cache: yes
+  tags:
+    - docker
+ 
+- name: Update apt packages
+  apt:
+    update_cache: yes
+  tags:
+    - docker
+ 
+- name: Install docker package
+  apt:
+    name: docker-ce
+    state: present
+  tags:
+    - docker
+
+- name: Autostart docker on  boot
+  service:
+    name: docker
+    enabled: true
+    state: started
+
+
+- name: Create "docker" group
+  group:
+    name: "{{ docker_group }}"
+    state: present
+  tags:
+    - docker
+ 
+- name: Add specified remote user to "docker" group
+  user:
+    name: "{{ remote_user }}"
+    group: "{{ docker_group }}"
+    append: yes
+  tags:
+    - docker
+
+- name: Start nginx container
+  docker_container:
+    name: nginx
+    image: nginx:latest
+    state: started
+    restart: yes
+    ports:
+     - "7070:80"
+  tags:
+    - docker
